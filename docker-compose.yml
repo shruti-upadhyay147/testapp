@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: testapp
+    ports:
+      - "5050:5050"
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+

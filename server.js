@@ -9,45 +9,51 @@ const PORT = process.env.PORT || 5050;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Serve static assets from public/
+// Serve static files like CSS from /public folder
 app.use(express.static(path.join(__dirname, "public")));
 
+// MongoDB Atlas connection URI (from Render or fallback)
 const MONGO_URL = process.env.MONGO_URI || "mongodb://localhost:27017";
-const client = new MongoClient(MONGO_URL);
+const client = new MongoClient(MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
 let db;
 
-// Connect to MongoDB once
+// Connect to MongoDB and then start the server
 async function startServer() {
   try {
     await client.connect();
     console.log("Connected to MongoDB");
+
     db = client.db("apnacollege-db");
 
     app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
+      console.log(`🚀 Server running at http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error("DB connection failed", err);
   }
 }
 
-// Serve index.html on root route
+// Route to serve the main HTML form
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "index.html"));
 });
 
-// Get all users
+// Route to fetch all users as JSON
 app.get("/getUsers", async (req, res) => {
   try {
     const users = await db.collection("user").find({}).toArray();
     res.json(users);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching users", err);
     res.status(500).send("Error fetching users");
   }
 });
 
-// Add new user
+// Route to handle form submission and add user
 app.post("/addUser", async (req, res) => {
   const userObj = req.body;
   console.log("Received user:", userObj);
@@ -57,12 +63,14 @@ app.post("/addUser", async (req, res) => {
     console.log("Inserted:", result.insertedId);
     res.send("User added successfully");
   } catch (err) {
-    console.error(err);
+    console.error("Error adding user", err);
     res.status(500).send("Error adding user");
   }
 });
 
+// Start server after DB is ready
 startServer();
+
 
 
   
